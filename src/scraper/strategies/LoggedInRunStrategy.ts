@@ -1,4 +1,4 @@
-import { config } from "../../config";
+import dotenv from 'dotenv'
 import { RunStrategy, IRunStrategyResult, ILoadResult } from "./RunStrategy";
 import { Page } from "puppeteer";
 import { events } from "../events";
@@ -60,7 +60,7 @@ export class LoggedInRunStrategy extends RunStrategy {
 
         await sleep(pollingTime); // Baseline to wait
 
-        while(!loaded) {
+        while (!loaded) {
             // We assume that job is loaded when description is present
             loaded = await page.evaluate(
                 (detailsSelector, descriptionSelector) => {
@@ -110,9 +110,9 @@ export class LoggedInRunStrategy extends RunStrategy {
 
         // Wait for pagination html to load
         try {
-            await page.waitForSelector(selectors.pagination, {timeout: timeout});
+            await page.waitForSelector(selectors.pagination, { timeout: timeout });
         }
-        catch(err) {
+        catch (err) {
             return {
                 success: false,
                 error: `Timeout on loading more jobs`
@@ -151,7 +151,7 @@ export class LoggedInRunStrategy extends RunStrategy {
                 selectors.links,
             );
 
-            if (loaded) return {success: true};
+            if (loaded) return { success: true };
 
             await sleep(pollingTime);
             elapsed += pollingTime;
@@ -164,7 +164,7 @@ export class LoggedInRunStrategy extends RunStrategy {
             }
         }
 
-        return {success: true};
+        return { success: true };
     };
 
     /**
@@ -183,9 +183,9 @@ export class LoggedInRunStrategy extends RunStrategy {
     ): Promise<ILoadResult> => {
         // Check if there is a new page to load
         try {
-            await page.waitForSelector(selectors.paginationNextBtn, {timeout: timeout});
+            await page.waitForSelector(selectors.paginationNextBtn, { timeout: timeout });
         }
-        catch(err) {
+        catch (err) {
             return {
                 success: false,
                 error: `There are no more pages to visit`
@@ -248,11 +248,11 @@ export class LoggedInRunStrategy extends RunStrategy {
     ): Promise<void> => {
         try {
             await page.evaluate((selector) => {
-                    const div = document.querySelector(selector);
-                    if (div) {
-                        div.style.display = "none";
-                    }
-                },
+                const div = document.querySelector(selector);
+                if (div) {
+                    div.style.display = "none";
+                }
+            },
                 selectors.chatPanel);
         }
         catch (err) {
@@ -312,7 +312,7 @@ export class LoggedInRunStrategy extends RunStrategy {
         logger.info("Setting authentication cookie");
         await page.setCookie({
             name: "li_at",
-            value: config.LI_AT_COOKIE!,
+            value: process.env.LI_AT_COOKIE!,
             domain: ".www.linkedin.com"
         });
 
@@ -332,7 +332,7 @@ export class LoggedInRunStrategy extends RunStrategy {
         try {
             await page.waitForSelector(selectors.container, { timeout: 5000 });
         }
-        catch(err) {
+        catch (err) {
             logger.info(tag, `No jobs found, skip`);
             return { exit: false };
         }
@@ -445,13 +445,13 @@ export class LoggedInRunStrategy extends RunStrategy {
 
                     [jobLink, loadDetailsResult] = await Promise.all([
                         page.evaluate((linksSelector: string, jobIndex: number) => {
-                                const linkElem = <HTMLElement>document.querySelectorAll(linksSelector)[jobIndex];
-                                linkElem.scrollIntoView();
-                                linkElem.click();
-                                const protocol = window.location.protocol + "//";
-                                const hostname = window.location.hostname;
-                                return protocol + hostname + linkElem.getAttribute("href");
-                            },
+                            const linkElem = <HTMLElement>document.querySelectorAll(linksSelector)[jobIndex];
+                            linkElem.scrollIntoView();
+                            linkElem.click();
+                            const protocol = window.location.protocol + "//";
+                            const hostname = window.location.hostname;
+                            return protocol + hostname + linkElem.getAttribute("href");
+                        },
                             selectors.links,
                             jobIndex
                         ),
@@ -480,9 +480,9 @@ export class LoggedInRunStrategy extends RunStrategy {
                     }
                     else {
                         [jobDescription, jobDescriptionHTML] = await page.evaluate((selector) => {
-                                const el = (<HTMLElement>document.querySelector(selector));
-                                return [el.innerText, el.outerHTML];
-                            },
+                            const el = (<HTMLElement>document.querySelector(selector));
+                            return [el.innerText, el.outerHTML];
+                        },
                             selectors.description
                         );
                     }
@@ -543,7 +543,7 @@ export class LoggedInRunStrategy extends RunStrategy {
                         selectors.criteria
                     );
                 }
-                catch(err) {
+                catch (err) {
                     const errorMessage = `${tag}\t${err.message}`;
                     this.scraper.emit(events.scraper.error, errorMessage);
                     jobIndex++;

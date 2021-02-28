@@ -1,5 +1,5 @@
+import dotenv from 'dotenv'
 import deepmerge from 'deepmerge';
-import { config } from '../config';
 import puppeteer from 'puppeteer-extra';
 import { Browser, BrowserContext, HTTPRequest } from 'puppeteer';
 import { events, IEventListeners } from './events';
@@ -14,6 +14,7 @@ import { Scraper, ScraperOptions } from './Scraper';
 import { RunStrategy, LoggedInRunStrategy, LoggedOutRunStrategy } from './strategies';
 import { logger } from '../logger/logger';
 
+dotenv.config();
 puppeteer.use(require('puppeteer-extra-plugin-stealth')());
 
 /**
@@ -35,7 +36,7 @@ class LinkedinScraper extends Scraper {
     constructor(options: ScraperOptions) {
         super(options);
 
-        if (config.LI_AT_COOKIE) {
+        if (process.env.LI_AT_COOKIE) {
             this._runStrategy = new LoggedInRunStrategy(this);
             logger.info(`Env variable LI_AT_COOKIE detected. Using ${LoggedInRunStrategy.name}`)
         }
@@ -112,7 +113,7 @@ class LinkedinScraper extends Scraper {
             }
 
             if (options.filters.time && options.filters.time.length) {
-                const key = config.LI_AT_COOKIE ? "f_TPR" : "f_TP";
+                const key = process.env.LI_AT_COOKIE ? "f_TPR" : "f_TP";
                 url.searchParams.append(key, options.filters.time);
             }
 
@@ -251,7 +252,7 @@ class LinkedinScraper extends Scraper {
                 page.on("request", onRequest);
 
                 // Error response and rate limiting check
-                page.on("response",  response => {
+                page.on("response", response => {
                     if (response.status() === 429) {
                         logger.warn(tag, "Error 429 too many requests. You would probably need to use a higher 'slowMo' value and/or reduce the number of concurrent queries.");
                     }
@@ -300,7 +301,7 @@ class LinkedinScraper extends Scraper {
                 const pollingTime = 100;
                 let elapsed = 0;
 
-                while(this._state !== states.initialized) {
+                while (this._state !== states.initialized) {
                     await sleep(pollingTime);
                     elapsed += pollingTime;
 
